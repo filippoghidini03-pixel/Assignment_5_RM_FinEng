@@ -113,7 +113,9 @@ def affine_trick(
         )
 
     # Volatility integrand
-    sigma_func = lambda u, T_frac: sigma * (1 - np.exp(mean_reversion*(T_frac - u)))/mean_reversion
+    #sigma_func = lambda u, T_frac: sigma * (1 - np.exp(mean_reversion*(T_frac - u)))/mean_reversion
+    sigma_func = lambda u, T_frac: sigma * (1 - np.exp(-mean_reversion*(T_frac - u)))/mean_reversion
+
 
     # Compute A(t,T) and C(t,T)
     for T in pricing_grid:
@@ -130,11 +132,13 @@ def affine_trick(
         integrand = lambda u: sigma_func(u, tau_0_T)**2 - sigma_func(u, tau_0_t)**2
         integral_val, _ = quad(integrand, 0, tau_0_t)
 
-        P_0_T = discount_factors.loc[T]
+        #P_0_T = discount_factors.loc[T]
+        P_0_T = get_discount_factor_by_zero_rates_linear_interp( discount_factors.index[0], T, discount_factors.index, discount_factors.values )
         P_0_t = discount_factors.loc[valuation_date]
 
         A[T] = (P_0_T / P_0_t) * np.exp(- 0.5 * integral_val)
-        C[T] = (1 - np.exp(-mean_reversion * (tau_t_T - tau_0_t))) / mean_reversion
+        #C[T] = (1 - np.exp(-mean_reversion * (tau_t_T - tau_0_t))) / mean_reversion
+        C[T] = (1 - np.exp(-mean_reversion * tau_t_T )) / mean_reversion
 
     return A, C
 
